@@ -1,6 +1,7 @@
 package csrf
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -263,6 +264,32 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cs.h.ServeHTTP(w, r)
 	// Clear the request context after the handler has completed.
 	context.Clear(r)
+}
+
+// CheckToken can be used to verify CSRF token that was provided with different method than
+// the standard Header or Cookie.
+//
+// This can be used for verifying callbacks in OAuth workflow.
+// See 'Cross-Site Request Forgery' in OAuth 2.0 spec: https://tools.ietf.org/html/rfc6749#section-10.12.
+func (cs *csrf) CheckToken(r *http.Request, providedToken string) error {
+	realToken, err := cs.st.Get(r)
+	if err != nil {
+		return err
+	}
+	if realToken == nil {
+		return ErrNoToken
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(providedToken)
+	if err != nil {
+		return nil
+	}
+
+	requestToken := unmask(decoded)
+	if !compareTokens(requestToken, realToken) {
+		return ErrBadToken
+	}
+	return nil
 }
 
 // unauthorizedhandler sets a HTTP 403 Forbidden status and writes the

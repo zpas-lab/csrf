@@ -201,6 +201,11 @@ Getting CSRF protection right is important, so here's some background:
 
 This library does not seek to be adventurous.
 
+## ZPAS-LAB patches
+
+* Added CheckToken functions in csrf.go to enable checking CSRF tokens coming from different sources than 
+  http.Request Header/Cookie.
+
 ## License
 
 BSD licensed. See the LICENSE file for details.
